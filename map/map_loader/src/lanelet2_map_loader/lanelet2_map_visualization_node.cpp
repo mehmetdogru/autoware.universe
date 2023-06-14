@@ -95,6 +95,7 @@ void Lanelet2MapVisualizationNode::onMapBin(
   lanelet::ConstLanelets shoulder_lanelets = lanelet::utils::query::shoulderLanelets(all_lanelets);
   lanelet::ConstLanelets crosswalk_lanelets =
     lanelet::utils::query::crosswalkLanelets(all_lanelets);
+  lanelet::ConstLanelets bicycle_lanelets = lanelet::utils::query::bicycleLanelets(all_lanelets);
   lanelet::ConstLineStrings3d partitions = lanelet::utils::query::getAllPartitions(viz_lanelet_map);
   lanelet::ConstLineStrings3d pedestrian_markings =
     lanelet::utils::query::getAllPedestrianMarkings(viz_lanelet_map);
@@ -127,11 +128,11 @@ void Lanelet2MapVisualizationNode::onMapBin(
     lanelet::utils::query::getAllPolygonsByType(viz_lanelet_map, "hatched_road_markings");
 
   std_msgs::msg::ColorRGBA cl_road, cl_shoulder, cl_cross, cl_partitions, cl_pedestrian_markings,
-    cl_ll_borders, cl_shoulder_borders, cl_stoplines, cl_trafficlights, cl_detection_areas,
-    cl_speed_bumps, cl_crosswalks, cl_parking_lots, cl_parking_spaces, cl_lanelet_id,
-    cl_obstacle_polygons, cl_no_stopping_areas, cl_no_obstacle_segmentation_area,
-    cl_no_obstacle_segmentation_area_for_run_out, cl_hatched_road_markings_area,
-    cl_hatched_road_markings_line;
+    cl_ll_borders, cl_shoulder_borders, cl_bll_borders, cl_stoplines, cl_trafficlights,
+    cl_detection_areas, cl_speed_bumps, cl_crosswalks, cl_bicycle_lane, cl_parking_lots,
+    cl_parking_spaces, cl_lanelet_id, cl_obstacle_polygons, cl_no_stopping_areas,
+    cl_no_obstacle_segmentation_area, cl_no_obstacle_segmentation_area_for_run_out,
+    cl_hatched_road_markings_area, cl_hatched_road_markings_line;
   setColor(&cl_road, 0.27, 0.27, 0.27, 0.999);
   setColor(&cl_shoulder, 0.15, 0.15, 0.15, 0.999);
   setColor(&cl_cross, 0.27, 0.3, 0.27, 0.5);
@@ -139,12 +140,14 @@ void Lanelet2MapVisualizationNode::onMapBin(
   setColor(&cl_pedestrian_markings, 0.5, 0.5, 0.5, 0.999);
   setColor(&cl_ll_borders, 0.5, 0.5, 0.5, 0.999);
   setColor(&cl_shoulder_borders, 0.2, 0.2, 0.2, 0.999);
+  setColor(&cl_bll_borders, 0.27, 0.48, 0.7, 0.8);
   setColor(&cl_stoplines, 0.5, 0.5, 0.5, 0.999);
   setColor(&cl_trafficlights, 0.5, 0.5, 0.5, 0.8);
   setColor(&cl_detection_areas, 0.27, 0.27, 0.37, 0.5);
   setColor(&cl_no_stopping_areas, 0.37, 0.37, 0.37, 0.5);
   setColor(&cl_speed_bumps, 0.56, 0.40, 0.27, 0.5);
   setColor(&cl_crosswalks, 0.80, 0.80, 0.0, 0.5);
+  setColor(&cl_bicycle_lane, 0.27, 0.48, 0.65, 0.6);
   setColor(&cl_obstacle_polygons, 0.4, 0.27, 0.27, 0.5);
   setColor(&cl_parking_lots, 0.5, 0.5, 0.0, 0.3);
   setColor(&cl_parking_spaces, 1.0, 0.647, 0.0, 0.6);
@@ -205,6 +208,9 @@ void Lanelet2MapVisualizationNode::onMapBin(
     &map_marker_array, lanelet::visualization::laneletsBoundaryAsMarkerArray(
                          road_lanelets, cl_ll_borders, viz_lanelets_centerline_));
   insertMarkerArray(
+    &map_marker_array, lanelet::visualization::laneletsBoundaryAsMarkerArray(
+                         bicycle_lanelets, cl_bll_borders, false, "bicycle_"));
+  insertMarkerArray(
     &map_marker_array,
     lanelet::visualization::autowareTrafficLightsAsMarkerArray(aw_tl_reg_elems, cl_trafficlights));
   insertMarkerArray(
@@ -222,6 +228,9 @@ void Lanelet2MapVisualizationNode::onMapBin(
   insertMarkerArray(
     &map_marker_array,
     lanelet::visualization::laneletsAsTriangleMarkerArray("road_lanelets", road_lanelets, cl_road));
+  insertMarkerArray(
+    &map_marker_array, lanelet::visualization::laneletsAsTriangleMarkerArray(
+                         "bicycle_lanelets", bicycle_lanelets, cl_bicycle_lane));
   insertMarkerArray(
     &map_marker_array, lanelet::visualization::noObstacleSegmentationAreaAsMarkerArray(
                          no_obstacle_segmentation_area, cl_no_obstacle_segmentation_area));
