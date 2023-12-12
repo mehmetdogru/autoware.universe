@@ -149,11 +149,14 @@ void DefaultPlanner::initialize_common(rclcpp::Node * node)
     node_->create_publisher<MarkerArray>("debug/goal_footprint", durable_qos);
 
   vehicle_info_ = vehicle_info_util::VehicleInfoUtil(*node_).getVehicleInfo();
+  param_.start_angle_threshold_deg = node_->declare_parameter<double>("start_angle_threshold_deg");
   param_.goal_angle_threshold_deg = node_->declare_parameter<double>("goal_angle_threshold_deg");
   param_.enable_correct_goal_pose = node_->declare_parameter<bool>("enable_correct_goal_pose");
   param_.consider_no_drivable_lanes = node_->declare_parameter<bool>("consider_no_drivable_lanes");
   param_.check_footprint_inside_lanes =
     node_->declare_parameter<bool>("check_footprint_inside_lanes");
+  param_.prioritize_start_footprint = node_->declare_parameter<bool>("prioritize_start_footprint");
+  param_.prioritize_goal_footprint = node_->declare_parameter<bool>("prioritize_goal_footprint");
 }
 
 void DefaultPlanner::initialize(rclcpp::Node * node)
@@ -391,6 +394,12 @@ PlannerPlugin::LaneletRoute DefaultPlanner::plan(const RoutePoints & points)
 {
   const auto logger = node_->get_logger();
 
+  LaneletRoute route_msg;
+  if (points.size() < 2) {
+    RCLCPP_WARN_STREAM(logger, "Not enough points to plan a route!" << std::endl);
+    return route_msg;
+  }
+
   std::stringstream log_ss;
   for (const auto & point : points) {
     log_ss << "x: " << point.position.x << " "
@@ -400,16 +409,28 @@ PlannerPlugin::LaneletRoute DefaultPlanner::plan(const RoutePoints & points)
     logger, "start planning route with check points: " << std::endl
                                                        << log_ss.str());
 
-  LaneletRoute route_msg;
+  auto goal_pose = points.back();
+  if (param_.enable_correct_goal_pose) {
+    goal_pose = get_closest_centerline_pose(
+      lanelet::utils::query::laneletLayer(lanelet_map_ptr_), goal_pose, vehicle_info_);
+  }
+
   RouteSections route_sections;
 
   lanelet::ConstLanelets all_route_lanelets;
   for (std::size_t i = 1; i < points.size(); i++) {
+    bool is_start_pose = i == 0;
+    bool is_goal_pose = i == (points.size() - 1);
+
     const auto start_check_point = points.at(i - 1);
-    const auto goal_check_point = points.at(i);
+    const auto goal_check_point = is_goal_pose ? goal_pose : points.at(i);
+
     lanelet::ConstLanelets path_lanelets;
     if (!route_handler_.planPathLaneletsBetweenCheckpoints(
-          start_check_point, goal_check_point, &path_lanelets, param_.consider_no_drivable_lanes)) {
+          start_check_point, goal_check_point, &path_lanelets, is_start_pose, is_goal_pose,
+          &vehicle_info_, param_.start_angle_threshold_deg, param_.goal_angle_threshold_deg,
+          param_.prioritize_start_footprint, param_.prioritize_goal_footprint,
+          param_.consider_no_drivable_lanes)) {
       RCLCPP_WARN(logger, "Failed to plan route.");
       return route_msg;
     }
@@ -422,12 +443,6 @@ PlannerPlugin::LaneletRoute DefaultPlanner::plan(const RoutePoints & points)
     route_sections = combine_consecutive_route_sections(route_sections, local_route_sections);
   }
   route_handler_.setRouteLanelets(all_route_lanelets);
-
-  auto goal_pose = points.back();
-  if (param_.enable_correct_goal_pose) {
-    goal_pose = get_closest_centerline_pose(
-      lanelet::utils::query::laneletLayer(lanelet_map_ptr_), goal_pose, vehicle_info_);
-  }
 
   if (!is_goal_valid(goal_pose, all_route_lanelets)) {
     RCLCPP_WARN(logger, "Goal is not valid! Please check position and angle of goal_pose");

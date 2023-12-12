@@ -35,10 +35,13 @@ namespace mission_planner::lanelet2
 
 struct DefaultPlannerParameters
 {
+  double start_angle_threshold_deg;
   double goal_angle_threshold_deg;
   bool enable_correct_goal_pose;
   bool consider_no_drivable_lanes;
   bool check_footprint_inside_lanes;
+  bool prioritize_start_footprint;
+  bool prioritize_goal_footprint;
 };
 
 class DefaultPlanner : public mission_planner::PlannerPlugin
