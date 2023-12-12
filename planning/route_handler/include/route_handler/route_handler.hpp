@@ -82,9 +82,11 @@ public:
   // for routing
   bool planPathLaneletsBetweenCheckpoints(
     const Pose & start_checkpoint, const Pose & goal_checkpoint,
-    lanelet::ConstLanelets * path_lanelets,
+    lanelet::ConstLanelets * path_lanelets, const bool is_start_pose, const bool is_goal_pose,
     const vehicle_info_util::VehicleInfo * vehicle_info = nullptr,
-    const bool prioritize_start_footprint = false,
+    const double start_angle_threshold_deg = std::numeric_limits<double>::max(),
+    const double goal_angle_threshold_deg = std::numeric_limits<double>::max(),
+    const bool prioritize_start_footprint = false, const bool prioritize_goal_footprint = false,
     const bool consider_no_drivable_lanes = false) const;
   std::vector<LaneletSegment> createMapSegments(const lanelet::ConstLanelets & path_lanelets) const;
   static bool isRouteLooped(const RouteSections & route_sections);

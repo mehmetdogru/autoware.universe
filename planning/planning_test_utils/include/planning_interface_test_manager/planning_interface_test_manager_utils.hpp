@@ -344,7 +344,7 @@ LaneletRoute makeBehaviorRouteFromLaneId(const int & start_lane_id, const int & 
 
   // Plan the path between checkpoints (start and goal poses)
   lanelet::ConstLanelets path_lanelets;
-  if (!route_handler->planPathLaneletsBetweenCheckpoints(start_pose, goal_pose, &path_lanelets)) {
+  if (!route_handler->planPathLaneletsBetweenCheckpoints(start_pose, goal_pose, &path_lanelets, true, true)) {
     return route_msg;
   }
 
