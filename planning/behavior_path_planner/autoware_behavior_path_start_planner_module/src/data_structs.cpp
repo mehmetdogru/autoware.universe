@@ -36,6 +36,8 @@ StartPlannerParameters StartPlannerParameters::init(rclcpp::Node & node)
     p.th_stopped_time = get_or_declare_parameter<double>(node, ns + "th_stopped_time");
     p.prepare_time_before_start =
       get_or_declare_parameter<double>(node, ns + "prepare_time_before_start");
+    p.min_bus_stop_pull_out_turn_signal_distance =
+      get_or_declare_parameter<double>(node, ns + "min_bus_stop_pull_out_turn_signal_distance");
     p.th_distance_to_middle_of_the_road =
       get_or_declare_parameter<double>(node, ns + "th_distance_to_middle_of_the_road");
     p.skip_rear_vehicle_check =
@@ -276,6 +278,10 @@ StartPlannerParameters StartPlannerParameters::init(rclcpp::Node & node)
   {
     p.safety_check_params.enable_safety_check =
       get_or_declare_parameter<bool>(node, safety_check_ns + "enable_safety_check");
+    p.prev_light_check_distance =
+      get_or_declare_parameter<double>(node, safety_check_ns + "prev_light_check_distance");
+    p.threshold_speed_for_prev_light_check = get_or_declare_parameter<double>(
+      node, safety_check_ns + "threshold_speed_for_prev_light_check");
     p.safety_check_params.hysteresis_factor_expand_rate =
       get_or_declare_parameter<double>(node, safety_check_ns + "hysteresis_factor_expand_rate");
     p.safety_check_params.backward_path_length =

@@ -106,6 +106,7 @@ struct StartPlannerParameters
   double th_stopped_velocity{0.0};
   double th_stopped_time{0.0};
   double prepare_time_before_start{0.0};
+  double min_bus_stop_pull_out_turn_signal_distance{0.0};
   double th_distance_to_middle_of_the_road{0.0};
   bool skip_rear_vehicle_check{false};
   double extra_width_margin_for_rear_obstacle{0.0};
@@ -166,6 +167,8 @@ struct StartPlannerParameters
   utils::path_safety_checker::EgoPredictedPathParams ego_predicted_path_params{};
   utils::path_safety_checker::ObjectsFilteringParams objects_filtering_params{};
   utils::path_safety_checker::SafetyCheckParams safety_check_params{};
+  double prev_light_check_distance{0.0};
+  double threshold_speed_for_prev_light_check{0.0};
 
   // surround moving obstacle check
   double search_radius{0.0};

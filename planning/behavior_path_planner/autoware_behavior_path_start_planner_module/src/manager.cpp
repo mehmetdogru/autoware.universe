@@ -58,6 +58,9 @@ void StartPlannerModuleManager::updateModuleParams(
     update_param<double>(
       parameters, ns + "prepare_time_before_start", p->prepare_time_before_start);
     update_param<double>(
+      parameters, ns + "min_bus_stop_pull_out_turn_signal_distance",
+      p->min_bus_stop_pull_out_turn_signal_distance);
+    update_param<double>(
       parameters, ns + "th_distance_to_middle_of_the_road", p->th_distance_to_middle_of_the_road);
     update_param<bool>(parameters, ns + "skip_rear_vehicle_check", p->skip_rear_vehicle_check);
     update_param<double>(
@@ -335,6 +338,12 @@ void StartPlannerModuleManager::updateModuleParams(
     update_param<bool>(
       parameters, safety_check_ns + "enable_safety_check",
       p->safety_check_params.enable_safety_check);
+    update_param<double>(
+      parameters, safety_check_ns + "prev_light_check_distance",
+      p->prev_light_check_distance);
+    update_param<double>(
+      parameters, safety_check_ns + "threshold_speed_for_prev_light_check",
+      p->threshold_speed_for_prev_light_check);
     update_param<double>(
       parameters, safety_check_ns + "hysteresis_factor_expand_rate",
       p->safety_check_params.hysteresis_factor_expand_rate);

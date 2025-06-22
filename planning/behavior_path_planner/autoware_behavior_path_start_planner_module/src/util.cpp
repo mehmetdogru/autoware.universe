@@ -41,10 +41,10 @@ PathWithLaneId getBackwardPath(
   const RouteHandler & route_handler, const lanelet::ConstLanelets & shoulder_lanes,
   const Pose & current_pose, const Pose & backed_pose, const double velocity)
 {
-  const auto current_pose_arc_coords =
-    lanelet::utils::getArcCoordinates(shoulder_lanes, current_pose);
-  const auto backed_pose_arc_coords =
-    lanelet::utils::getArcCoordinates(shoulder_lanes, backed_pose);
+  const auto current_pose_arc_coords = lanelet::utils::getArcCoordinatesOnEgoCenterline(
+    shoulder_lanes, current_pose, route_handler.getLaneletMapPtr());
+  const auto backed_pose_arc_coords = lanelet::utils::getArcCoordinatesOnEgoCenterline(
+    shoulder_lanes, backed_pose, route_handler.getLaneletMapPtr());
 
   const double s_start = backed_pose_arc_coords.length;
   const double s_end = current_pose_arc_coords.length;
@@ -131,6 +131,89 @@ std::optional<PathWithLaneId> extractCollisionCheckSection(
   }
 
   return collision_check_section;
+}
+
+double getClosestIntersectionSignalStartArcLength(
+  const std::shared_ptr<const PlannerData> & planner_data,
+  const lanelet::ConstLanelet & search_start_lanelet, const double search_distance,
+  const Direction & pull_out_direction)
+{
+  const auto & rh = planner_data->route_handler;
+  double max_signal_dist_to_start_pt = 0.0;
+
+  std::string search_direction_in_route;
+  std::string search_direction_non_route;
+  switch (pull_out_direction) {
+    case Direction::RIGHT:
+      search_direction_in_route = "left";
+      search_direction_non_route = "right";
+      break;
+
+    case Direction::LEFT:
+      search_direction_in_route = "right";
+      search_direction_non_route = "left";
+      break;
+
+    default:
+      return max_signal_dist_to_start_pt;
+  }
+
+  lanelet::ConstLanelet current_lanelet = search_start_lanelet;
+  double searched_distance = 0.0;
+  while (searched_distance < search_distance) {
+    lanelet::ConstLanelets next_lanelets = rh->getNextLanelets(current_lanelet);
+    if (next_lanelets.empty()) break;
+
+    std::optional<lanelet::ConstLanelet> next_lanelet{};
+    for (const auto & candidate_next_lanelet : next_lanelets) {
+      auto update_max_signal_dist_to_start_pt = [&]() {
+        const double signal_distance =
+          candidate_next_lanelet.attributeOr(
+            "turn_signal_distance",
+            planner_data->parameters.turn_signal_intersection_search_distance) +
+          planner_data->parameters.base_link2front;
+        max_signal_dist_to_start_pt =
+          std::max(signal_distance - searched_distance, max_signal_dist_to_start_pt);
+      };
+
+      const std::string turn_direction =
+        candidate_next_lanelet.attributeOr("turn_direction", std::string("none"));
+
+      if (rh->isRouteLanelet(candidate_next_lanelet)) {
+        next_lanelet = candidate_next_lanelet;
+        if (turn_direction == search_direction_in_route) {
+          update_max_signal_dist_to_start_pt();
+          return max_signal_dist_to_start_pt;
+        }
+      } else if (turn_direction == search_direction_non_route)
+        update_max_signal_dist_to_start_pt();
+    }
+
+    if (!next_lanelet) break;
+    searched_distance += lanelet::utils::getLaneletLength3d(next_lanelet.value());
+    current_lanelet = next_lanelet.value();
+  }
+  return max_signal_dist_to_start_pt;
+}
+
+lanelet::LineString3d combineEgoCenterline(
+  const lanelet::LaneletMapConstPtr & lanelet_map_ptr, const lanelet::ConstLanelets & lanelets)
+{
+  lanelet::Points3d centers;
+  for (const auto & llt : lanelets) {
+    lanelet::ConstLineString3d centerline;
+    if (llt.hasAttribute("waypoints")) {
+      const auto waypoints_id = llt.attribute("waypoints").asId().value();
+      centerline = lanelet::utils::to3D(lanelet_map_ptr->lineStringLayer.get(waypoints_id));
+    } else {
+      centerline = lanelet::utils::to3D(llt.centerline());
+    }
+
+    for (const auto & pt : centerline) {
+      centers.push_back(lanelet::Point3d(pt));
+    }
+  }
+  return lanelet::LineString3d(lanelet::InvalId, centers);
 }
 
 }  // namespace autoware::behavior_path_planner::start_planner_utils

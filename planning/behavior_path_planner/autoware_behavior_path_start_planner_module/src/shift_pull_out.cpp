@@ -34,7 +34,7 @@
 using autoware::motion_utils::findNearestIndex;
 using autoware_utils::calc_distance2d;
 using autoware_utils::calc_offset_pose;
-using lanelet::utils::getArcCoordinates;
+using lanelet::utils::getArcCoordinatesOnEgoCenterline;
 namespace autoware::behavior_path_planner
 {
 using start_planner_utils::getPullOutLanes;
@@ -263,7 +263,8 @@ std::vector<PullOutPath> ShiftPullOut::calcPullOutPaths(
     std::numeric_limits<double>::epsilon());
 
   // generate road lane reference path
-  const auto arc_position_start = getArcCoordinates(road_lanes, start_pose);
+  const auto arc_position_start =
+    getArcCoordinatesOnEgoCenterline(road_lanes, start_pose, route_handler.getLaneletMapPtr());
   const double s_start = std::max(arc_position_start.length - backward_path_length, 0.0);
   const auto path_end_info =
     autoware::behavior_path_planner::utils::parking_departure::calcEndArcLength(
@@ -289,10 +290,9 @@ std::vector<PullOutPath> ShiftPullOut::calcPullOutPaths(
 
   bool has_non_shifted_path = false;
 
-  // if shift length is too short, add non sifted path
-  constexpr double MINIMUM_SHIFT_LENGTH = 0.01;
+  // if shift length is too short, add non shifted path
   const double shift_length = arc_position_start.distance;
-  const bool is_smaller_than_minimum = std::abs(shift_length) < MINIMUM_SHIFT_LENGTH;
+  const bool is_smaller_than_minimum = std::abs(shift_length) < parameters_.th_distance_to_middle_of_the_road;
 
   if (is_smaller_than_minimum) {
     candidate_paths.push_back(non_shifted_path);

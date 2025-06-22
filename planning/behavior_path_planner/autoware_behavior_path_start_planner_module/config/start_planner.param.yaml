@@ -51,8 +51,9 @@
       backward_search_resolution: 2.0
       backward_path_update_duration: 3.0
       ignore_distance_from_lane_end: 0.0
-      # turns signal
+      # turn signal
       prepare_time_before_start: 0.0
+      min_bus_stop_pull_out_turn_signal_distance: 3.0 # [m]
       # freespace planner
       freespace_planner:
         enable_freespace_planner: true
@@ -144,6 +145,8 @@
         safety_check_params:
           # safety check configuration
           enable_safety_check: true
+          prev_light_check_distance: 50.0 # [m] Prevent departure if the previous traffic light (v2i) is green in high speed roads. Set to 0 to disable this feature.
+          threshold_speed_for_prev_light_check: 50.0 # [kph] Threshold to check if ego is about to enter a high-speed road.
           # collision check parameters
           publish_debug_marker: false
           rss_params:
