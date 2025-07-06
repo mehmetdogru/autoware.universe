@@ -160,6 +160,7 @@ double getClosestIntersectionSignalStartArcLength(
 
   lanelet::ConstLanelet current_lanelet = search_start_lanelet;
   double searched_distance = 0.0;
+  bool found_intersection_lanelet_in_route = false;
   while (searched_distance < search_distance) {
     lanelet::ConstLanelets next_lanelets = rh->getNextLanelets(current_lanelet);
     if (next_lanelets.empty()) break;
@@ -183,11 +184,14 @@ double getClosestIntersectionSignalStartArcLength(
         next_lanelet = candidate_next_lanelet;
         if (turn_direction == search_direction_in_route) {
           update_max_signal_dist_to_start_pt();
-          return max_signal_dist_to_start_pt;
+          found_intersection_lanelet_in_route = true;
         }
-      } else if (turn_direction == search_direction_non_route)
+      } else if (turn_direction == search_direction_non_route) {
         update_max_signal_dist_to_start_pt();
+      }
     }
+
+    if (found_intersection_lanelet_in_route) break;
 
     if (!next_lanelet) break;
     searched_distance += lanelet::utils::getLaneletLength3d(next_lanelet.value());
@@ -209,9 +213,9 @@ lanelet::LineString3d combineEgoCenterline(
       centerline = lanelet::utils::to3D(llt.centerline());
     }
 
-    for (const auto & pt : centerline) {
-      centers.push_back(lanelet::Point3d(pt));
-    }
+    std::transform(
+      centerline.begin(), centerline.end(), std::back_inserter(centers),
+      [](const auto & pt) { return lanelet::Point3d(pt); });
   }
   return lanelet::LineString3d(lanelet::InvalId, centers);
 }

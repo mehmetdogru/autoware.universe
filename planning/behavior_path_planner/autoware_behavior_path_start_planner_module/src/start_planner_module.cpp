@@ -1614,9 +1614,10 @@ TurnSignalInfo StartPlannerModule::calcTurnSignalInfo()
 
   TurnSignalInfo new_signal{};
   if (!isCurrentPoseOnBusStop()) {
-    const auto [new_signal, is_ignore] = planner_data_->getBehaviorTurnSignalInfo(
+    const auto [tmp_signal, is_ignore] = planner_data_->getBehaviorTurnSignalInfo(
       path, shift_start_idx, shift_end_idx, current_lanes, current_shift_length,
       status_.driving_forward, egos_lane_is_shifted, override_ego_stopped_check, is_pull_out);
+    new_signal = tmp_signal;
     ignore_signal_ = update_ignore_signal(closest_lanelet.id(), is_ignore);
   } else {
     new_signal = calcBusStopTurnSignalInfo();
